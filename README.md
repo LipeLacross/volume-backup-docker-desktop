@@ -1,110 +1,164 @@
-# volume-backup
+## 🌐 [English Version of README](README_EN.md)
 
-An utility to backup and restore [Docker volumes](https://docs.docker.com/storage/volumes/). For more info, read my article on [Medium](https://medium.com/@jareklipski/backup-restore-docker-named-volumes-350397b8e362).
+# Docker Volume Backup and Restore
 
-It works just as well with [Podman](https://podman.io/) volumes, just prefix each command with `podman` instead of `docker`.
+Este é um utilitário para realizar backup e restauração de volumes Docker. Funciona da mesma forma com volumes do Podman, basta substituir o comando `docker` por `podman`.
 
-**Note**: Make sure no container is using the volume before backup or restore, otherwise your data might be damaged. See [Miscellaneous](#miscellaneous) for instructions.
+> **Aviso**: Certifique-se de que nenhum contêiner esteja utilizando o volume antes de realizar o backup ou a restauração, caso contrário, seus dados podem ser corrompidos. Consulte "Miscellaneous" para mais informações.
 
-**Note**: When using docker-compose, make sure to backup and restore volume labels. See [Miscellaneous](#miscellaneous) for more information.
+> **Nota**: Quando estiver usando `docker-compose`, não se esqueça de fazer backup e restaurar as labels dos volumes. Consulte "Miscellaneous" para mais detalhes.
 
-## Backup
+## 🔨 Funcionalidades do Projeto
 
-Syntax:
+- Realiza backup de volumes Docker com suporte para diferentes algoritmos de compressão.
+- Restaura volumes a partir de arquivos de backup, com a possibilidade de forçar a substituição de dados.
+- Suporte para exclusão de arquivos ou diretórios durante o backup.
+- Permite a migração de volumes entre diferentes hosts via SSH.
+- Opção para preservar labels de volumes quando necessário (importante para `docker-compose`).
 
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup > [archive-path]
+### Exemplo Visual do Projeto
 
-For example:
+**Backup de volume:**
 
-    docker run -v some_volume:/volume --rm --log-driver none loomchild/volume-backup backup > some_archive.tar.bz2
+```bash
+docker run -v some_volume:/volume --rm --log-driver none loomchild/volume-backup backup > some_archive.tar.bz2
+```
 
-will archive volume named `some_volume` to `some_archive.tar.bz2` archive file.
+**Restauração de volume:**
 
-**Note**: `--log-driver none` option is necessary to avoid storing an entire backup in a temporary stdout JSON file. More info in [Docker logging documentation](https://docs.docker.com/config/containers/logging/configure/) and in [this issue](https://github.com/loomchild/volume-backup/issues/39).
+```bash
+docker run -i -v some_volume:/volume --rm loomchild/volume-backup restore < some_archive.tar.bz2
+```
 
-**WARNING**: This method should not be used under PowerShell on Windows as no usable backup will be generated.
+## ✔️ Técnicas e Tecnologias Utilizadas
 
-### Backup to a file (deprecated)
+- **Docker**: Para criar, gerenciar e manipular volumes.
+- **Tar**: Utilizado para arquivar e extrair dados durante o processo de backup e restauração.
+- **Algoritmos de Compressão**: Suporte para `bz2`, `gz`, `xz`, `pigz`, `zstd` e sem compressão.
 
-Syntax:
+## 📁 Estrutura do Projeto
 
-    docker run -v [volume-name]:/volume -v [output-dir]:/backup --rm loomchild/volume-backup backup [archive-name]
+- **Dockerfile**: Arquivo para construir a imagem Docker.
+- **LICENSE**: Licença do projeto.
+- **README.md**: Documentação do projeto.
+- **volume-backup.sh**: Script principal para backup e restauração de volumes Docker.
 
-For example:
+## 🛠️ Abrir e rodar o projeto
 
-    docker run -v some_volume:/volume -v /tmp:/backup --rm loomchild/volume-backup backup some_archive
+Para usar este utilitário localmente, siga os passos abaixo:
 
-will archive volume named `some_volume` to `/tmp/some_archive.tar.bz2` archive file.
+1. **Certifique-se de que o Docker está instalado**:
+   - O [Docker](https://www.docker.com/get-started) é necessário para rodar o projeto. Você pode verificar se já o tem instalado com:
 
-## Restore
+     ```bash
+     docker -v
+     ```
 
-Syntax:
+   - Se não estiver instalado, baixe e instale a versão recomendada.
 
-    docker run -i -v [volume-name]:/volume --rm loomchild/volume-backup restore < [archive-path]
+2. **Clone o Repositório**:
+   - Copie a URL do repositório e execute o comando abaixo no terminal:
 
-For example:
+     ```bash
+     git clone https://github.com/usuario/volume-backup.git
+     cd volume-backup
+     ```
 
-    docker run -i -v some_volume:/volume --rm loomchild/volume-backup restore < some_archive.tar.bz2
+3. **Construir a Imagem Docker**:
+   - Execute o comando abaixo para construir a imagem Docker:
 
-will clean and restore volume named `some_volume` from `some_archive.tar.bz2` archive file.
+     ```bash
+     docker build -t volume-backup .
+     ```
 
-**Note**: Don't forget the `-i` switch for interactive operation.
-**Note** Restore will fail if the target volume is not empty (use `-f` flag to override).
+4. **Rodar o Backup ou Restauração**:
+   - **Backup**:
 
-### Restore from a file (deprecated)
+     ```bash
+     docker run -v [volume-name]:/volume --rm --log-driver none volume-backup backup > [archive-path]
+     ```
 
-Syntax:
+   - **Restauração**:
 
-    docker run -v [volume-name]:/volume -v [output-dir]:/backup --rm loomchild/volume-backup restore [archive-name]
+     ```bash
+     docker run -i -v [volume-name]:/volume --rm --log-driver none volume-backup restore < [archive-path]
+     ```
 
-For example:
+## 🌐 Deploy
 
-    docker run -v some_volume:/volume -v /tmp:/backup --rm loomchild/volume-backup restore some_archive
+Para fazer o deploy em produção ou em outro ambiente, siga as instruções abaixo:
 
-will clean and restore volume named `some_volume` from `/tmp/some_archive.tar.bz2` archive file.
+1. **Subir a imagem para o DockerHub ou GitHub Container Registry**:
+   - Você pode fazer o push da imagem para o DockerHub ou usar o GitHub Container Registry para evitar limitações de uso no DockerHub.
+
+     ```bash
+     docker tag volume-backup ghcr.io/username/volume-backup
+     docker push ghcr.io/username/volume-backup
+     ```
+
+2. **Rodar o Backup ou Restauração no Host de Produção**:
+   - No host de produção, execute os mesmos comandos de backup e restauração descritos acima.
 
 ## Miscellaneous
 
-1. Upgrade / update volume-backup
-    ```
-    docker pull loomchild/volume-backup
-    ```
+- **Atualizar a imagem**:
 
-1. volume-backup is also available from GitHub Container Registry (ghcr.io), to avoid DockerHub usage limits:
-    ```
-    docker pull ghcr.io/loomchild/volume-backup
-    ```
-    **Note**: you'll need to write `ghcr.io/loomchild/volume-backup` instead of just `loomchild/volume-backup` when running the utility.
+  ```bash
+  docker pull loomchild/volume-backup
+  ```
 
-1. Find all containers using a volume (to stop them before backing-up)
-    ```
-    docker ps -a --filter volume=[volume-name]
-    ```
+  Ou use o GitHub Container Registry para evitar limitações no DockerHub:
 
-1. Exclude some files from the backup and send the archive to stdout
-    ```
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -e [excluded-glob] > [archive-path]
-    ```
+  ```bash
+  docker pull ghcr.io/loomchild/volume-backup
+  ```
 
-1. Use different compression algorithm for better performance
-    ```
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -c pigz > [archive-path]
-    ```
+- **Encontrar contêineres utilizando um volume**:
 
-1. Show simple progress indicator using verbose `-v` flag (works both for backup and restore)
-    ```
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -v > [archive-path]
-    ```
+  ```bash
+  docker ps -a --filter volume=[volume-name]
+  ```
 
-1. Pass additional arguments to the Tar utility using `-x` option
-    ```
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -x --verbose > [archive-path]
-    ```
+- **Excluir arquivos do backup**:
 
-1. Directly migrate the volume to a new host
-    ```
-    docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup | ssh [receiver] docker run -i -v [volume-name]:/volume --rm loomchild/volume-backup restore
-    ```
-    **Note**: In case there are no traffic limitations between the hosts you can trade CPU time for bandwidth by turning off compression via `-c none` option.
+  ```bash
+  docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -e [excluded-glob] > [archive-path]
+  ```
 
-1. Volume labels are not backed-up or restored automatically, but they might be required for your application to work (e.g. when using `docker-compose`). If you need to preserve them, create a label backup file as follows: `docker inspect [volume-name] -f "{{json .Labels}}" > labels.json`. When restoring your data, target volume needs to be created manually with labels before launching the restore script: `docker volume create --label "label1" --label "label2" [volume-name]`.
+- **Usar algoritmo de compressão diferente**:
+
+  ```bash
+  docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -c pigz > [archive-path]
+  ```
+
+- **Exibir indicador de progresso**:
+
+  ```bash
+  docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -v > [archive-path]
+  ```
+
+- **Passar argumentos adicionais para o `tar`**:
+
+  ```bash
+  docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup -x --verbose > [archive-path]
+  ```
+
+- **Migrar volume diretamente para um novo host via SSH**:
+
+  ```bash
+  docker run -v [volume-name]:/volume --rm --log-driver none loomchild/volume-backup backup | ssh [receiver] docker run -i -v [volume-name]:/volume --rm loomchild/volume-backup restore
+  ```
+
+- **Preservar labels de volumes**: Caso você utilize o `docker-compose`, salve e restaure as labels com:
+
+  ```bash
+  docker inspect [volume-name] -f "{{json .Labels}}" > labels.json
+  ```
+
+  Durante a restauração, crie o volume manualmente com as labels:
+
+  ```bash
+  docker volume create --label "label1" --label "label2" [volume-name]
+  ```
+
+```
